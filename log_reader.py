@@ -17,7 +17,7 @@ class LogRow:
         self.row.append(UITextButton(f"id:{log.prop_dict['id']}"))
         for field in LogEntry.MATCHING_PROPS_FOR_GROUP:
             self.row.append(UITextButton(f"{field}:{log.prop_dict[field]}"))
-            #UITextButton("dst:"+log.dst_ip),UITextButton("dstp:"+log.destination_port),UITextButton("id:"+log.id),UITextButton("srcip:"+log.src_ip),UITextButton("type:"+log.log_type)
+        
         self.log=log
         self.group_ct_el:UITextButton|None=None
         self.group_ct=0

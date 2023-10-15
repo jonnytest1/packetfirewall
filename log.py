@@ -6,7 +6,6 @@ from datetime import datetime
 
 tables=["filter","nat","mangle","raw","security"]
 
-"""Oct 15 00:00:29 PCn kernel: [21219.536922] LOG_INTERCEPT#INPUTIN=lo OUT= MAC=00:00:00:00:00:00:00:00:00:00:00:00:08:00 SRC=127.0.0.1 DST=127.0.0.1 LEN=109 TOS=0x00 PREC=0x00 TTL=64 ID=46133 DF PROTO=TCP SPT=52050 DPT=34249 WINDOW=24571 RES=0x00 ACK PSH URGP=0 """
 class LogEntry:
     MATCHING_PROPS_FOR_GROUP=["dst_ip","src_ip","destination_port","protocol","interface_in","log_type"]
 
