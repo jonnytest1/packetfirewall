@@ -15,7 +15,7 @@ class LogEntry:
         ip_match="SRC=(?P<src_ip>[^ ]*?) DST=(?P<dst_ip>[^ ]*?) "
         port_match="SPT=(?P<source_port>[^ ]*?) DPT=(?P<destination_port>[^ ]*?) "
         date_match="(?P<timestamp>.*?\\d\\d:\\d\\d:\\d\\d) (?P<pcname>.*?) kernel: \\[(?P<log_id_ct>.*?)\\] "
-        
+
         match= search(f"{date_match}LOG_INTERCEPT#(?P<log_type>[^ ]*?){interface_match}MAC=(?P<mac>[^ ]*?) {ip_match}LEN=(?P<length>[^ ]*?) TOS=.*?ID=(?P<id>[^ ]*?) .*?PROTO=(?P<protocol>[^ ]*?) {port_match}",line)
         if match == None:
             return
@@ -139,10 +139,10 @@ class IpTablesRule:
         pass
 
 
-def setupLogging():
-    run("echo \":msg,contains,\"[LOG_INTERCEPT]\" /var/log/iptables.log\" >> " ,shell=True,capture_output=True)
-    run("systemctl restart rsyslog" ,shell=True,capture_output=True)
-    run("echo 1 > /proc/sys/net/ipv4/ip_forward",shell=True,capture_output=True)
+
+   # run("echo \":msg,contains,\"[LOG_INTERCEPT]\" /var/log/iptables.log\" >> " ,shell=True,capture_output=True)
+    #run("systemctl restart rsyslog" ,shell=True,capture_output=True)
+    #run("echo 1 > /proc/sys/net/ipv4/ip_forward",shell=True,capture_output=True)
 
 def setup_logging(conditions:list[Condition]):
     rules=get_rules()
