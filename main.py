@@ -33,8 +33,9 @@ def onfilter_form(dict):
     setup_logging(conditions)
 
 def remove_filters():
+    print("cleaning up log filters...\r")
     cleanup_logging()
-    pass
+    print("done\r")
 
 form=UIForm(fields=["source interface","source ip","destination ip","destination port"]
             ,confirmationname="setup log filter",oncomplete=onfilter_form)
@@ -44,7 +45,7 @@ def main_escape():
     stop_flag_input.put("QUIT")
     stop_flag_log.put("QUIT")
     remove_filters()
-    print("one more input to reactivate input thread 😅")
+    print("one more input to reactivate input thread(it doesnt know its supposed to stop otherwise 😅) \r")
     log_thread.join()
     input_thread.join()
     return True
@@ -67,8 +68,6 @@ def to_rules():
     ui.set_columns([[UITextButton("back",to_form)]])
 
     for rule in rules:
-
-        
         chain=rule.propsdict["chain"]
         row:list[UITextElement] = [UITextButton(f"table:{rule.table}"),UITextButton(f"chain:{chain.value}")]
         for key,val in rule.propsdict.items():
