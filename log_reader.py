@@ -1,3 +1,4 @@
+from datetime import datetime
 from queue import Queue
 from log import LogEntry, get_logs
 from ui.baseelement import UITextElement
@@ -13,6 +14,7 @@ class LogRow:
     def __init__(self,log:LogEntry):
         
         self.row:list[UITextElement] =[]
+        self.row.append(UITextButton(f"id:{log.prop_dict['id']}"))
         for field in LogEntry.MATCHING_PROPS_FOR_GROUP:
             self.row.append(UITextButton(f"{field}:{log.prop_dict[field]}"))
             #UITextButton("dst:"+log.dst_ip),UITextButton("dstp:"+log.destination_port),UITextButton("id:"+log.id),UITextButton("srcip:"+log.src_ip),UITextButton("type:"+log.log_type)
@@ -49,6 +51,7 @@ class LogRow:
 loglist:list[LogRow]=[]      
 
 def log_loop(ui:UI,evt_quque:Queue):
+    starttime=datetime.now()
     while True:
         if(not evt_quque.empty()):
             evt=evt_quque.get()
@@ -57,22 +60,24 @@ def log_loop(ui:UI,evt_quque:Queue):
 
         newlogs=get_logs()
         for log in newlogs:
-            if log.id not in logids:
-                logids.add(log.id)
+            if log.datetime<starttime:
+                continue
+            if (log.interface_in == "eth0" or log.interface_in_phys=="eth0") and log.protocol=="TCP" and log.destination_port=="9000":
+                setid=log.id+log.log_type
+                if setid not in logids:
+                    logids.add(setid)
 
-                matched=False
-                for logref in loglist:
-                    if(logref.log.grouped(log)) and False:
-                        logref.add_group(log)
-                        ui.redraw()
-                        matched=True
-                        break
-                
-                if not matched:
-                    if (log.interface_in == "eth0" or log.interface_in_phys=="eth0") and log.protocol=="TCP" and log.destination_port=="9000":
+                    matched=False
+                    for logref in loglist:
+                        if(logref.log.grouped(log)):
+                            logref.add_group(log)
+                            ui.redraw()
+                            matched=True
+                            break
+                    
+                    if not matched:
                         row_ref = LogRow(log)
                         loglist.append(row_ref)
                         ui.columns.append(row_ref.row)
                         ui.redraw()
-                    else:
-                        pass
+                    

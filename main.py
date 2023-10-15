@@ -95,11 +95,11 @@ src_ip 127.0.0.1? No→ nat-PREROUTING                                          
                            ↓                     |                                  |
                      security-INPUT              ----→ [Release to interface_out]←---
                            ↓                                       ↓
-                        nat-INPUT                           dst_ip 127.0.0.1? No-----|
-                           ↓                                       |                 ↓  
-                      *LOCAL(apps)*                                |            nat-POSTROUTING
-                                                                   |                 |
-                                                                   |------------------
+                        nat-INPUT                           mangle-POSTROUTING
+                           ↓                                       ↓                   
+                      *LOCAL(apps)*                         dst_ip 127.0.0.1? No------↓            
+                                                                   |             nat-POSTROUTING
+                                                                   |------------------|
                                                                    ↓
                                                                  *OUT*
 """,to_form)]])

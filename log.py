@@ -15,6 +15,7 @@ class LogEntry:
         ip_match="SRC=(?P<src_ip>[^ ]*?) DST=(?P<dst_ip>[^ ]*?) "
         port_match="SPT=(?P<source_port>[^ ]*?) DPT=(?P<destination_port>[^ ]*?) "
         date_match="(?P<timestamp>.*?\\d\\d:\\d\\d:\\d\\d) (?P<pcname>.*?) kernel: \\[(?P<log_id_ct>.*?)\\] "
+        
         match= search(f"{date_match}LOG_INTERCEPT#(?P<log_type>[^ ]*?){interface_match}MAC=(?P<mac>[^ ]*?) {ip_match}LEN=(?P<length>[^ ]*?) TOS=.*?ID=(?P<id>[^ ]*?) .*?PROTO=(?P<protocol>[^ ]*?) {port_match}",line)
         if match == None:
             return
@@ -148,8 +149,6 @@ def setup_logging(conditions:list[Condition]):
 
     table_chains:dict[str,set[str]]=dict()
 
-        
-        
     for rule in rules:
         if rule.table not in table_chains:
             table_chains[rule.table]=set()
