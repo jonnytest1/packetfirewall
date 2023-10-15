@@ -5,8 +5,9 @@ from termcolor import colored
 from os import system
 from input.input import  input_loop, stdin_has_content
 from input.input_types import INPUT_TYPES
-from log import LogEntry, get_logs
+from log import Condition, LogEntry, cleanup_logging, get_logs, get_rules, setup_logging
 from log_reader import log_loop
+from ui.baseelement import UITextElement
 from ui.form import UIForm
 from ui.ui import UI
 from ui.ui_text_input import UITextInput
@@ -25,10 +26,14 @@ ui=UI()
 
 
 def onfilter_form(dict):
-
-    pass
+    conditions=[Condition("protocol","tcp",False)]
+    if dict["destination port"]!=None:
+        conditions.append(Condition("dst_port",dict["destination port"],False))
+    
+    setup_logging(conditions)
 
 def remove_filters():
+    cleanup_logging()
     pass
 
 form=UIForm(fields=["source interface","source ip","destination ip","destination port"]
@@ -49,9 +54,27 @@ escape_fnc=main_escape
 def to_form():
     global escape_fnc
     ui.set_columns([])
+    ui.columns.append([UITextButton("set filters for packets you're interested in",to_graph)])
     form.add_to(ui)
     ui.columns.append([UITextButton("graph",to_graph)])
+    ui.columns.append([UITextButton("rules",to_rules)])
     escape_fnc=main_escape
+
+
+
+def to_rules():
+    rules=get_rules()
+    ui.set_columns([[UITextButton("back",to_form)]])
+
+    for rule in rules:
+
+        
+        chain=rule.propsdict["chain"]
+        row:list[UITextElement] = [UITextButton(f"table:{rule.table}"),UITextButton(f"chain:{chain.value}")]
+        for key,val in rule.propsdict.items():
+            if key!="chain":
+                row.append(UITextButton(f"{key}:{val.value}",rule.delete))
+        ui.columns.append(row)
 
 def to_graph():
     global escape_fnc

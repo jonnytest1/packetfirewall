@@ -21,6 +21,7 @@ class LogRow:
         self.group_ct=0
 
         self.latest_el:UITextButton|None=None
+        self.steps_el:UITextButton|None=None
 
 
     def add_group(self,other:LogEntry):
@@ -37,6 +38,12 @@ class LogRow:
 
 
         self.latest_el.text="latest:"+other.datetime.isoformat()
+
+        if self.steps_el == None:
+            self.steps_el=UITextButton("")
+            self.row.append(self.steps_el)
+        
+        pass
 
 
 loglist:list[LogRow]=[]      
@@ -55,7 +62,7 @@ def log_loop(ui:UI,evt_quque:Queue):
 
                 matched=False
                 for logref in loglist:
-                    if(logref.log.grouped(log)):
+                    if(logref.log.grouped(log)) and False:
                         logref.add_group(log)
                         ui.redraw()
                         matched=True
@@ -67,3 +74,5 @@ def log_loop(ui:UI,evt_quque:Queue):
                         loglist.append(row_ref)
                         ui.columns.append(row_ref.row)
                         ui.redraw()
+                    else:
+                        pass

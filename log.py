@@ -1,7 +1,9 @@
-from os import system
+
 from subprocess import run
 from re import search
 from datetime import datetime
+
+
 tables=["filter","nat","mangle","raw","security"]
 
 """Oct 15 00:00:29 PCn kernel: [21219.536922] LOG_INTERCEPT#INPUTIN=lo OUT= MAC=00:00:00:00:00:00:00:00:00:00:00:00:08:00 SRC=127.0.0.1 DST=127.0.0.1 LEN=109 TOS=0x00 PREC=0x00 TTL=64 ID=46133 DF PROTO=TCP SPT=52050 DPT=34249 WINDOW=24571 RES=0x00 ACK PSH URGP=0 """
@@ -48,80 +50,59 @@ class Condition:
         self.type=type
         self.value=value
         self.negated=negated
+    
+    def to_cmd(self):
+        inversemapping=INV_COND_MAP[self.type]
+
+        if inversemapping == None:
+            raise Exception("failed backwards mapping")
+        negation=""
+        if(self.negated):
+            negation="! "
+        return f"{negation}{inversemapping} {self.value}"
+
 
 class IpTablesRule:
+
+    CONDITION_MAP={
+        "-A" :"chain", #append to chain
+        "-I" :"chain", #insert into chain
+        "-N" :"chain", #new chain
+        "-P" :"chain", #default policy for chain
+        "-s" :"src_ip", #
+        "-d" :"dst_ip", #
+        "-m" :"match", #
+        "-p" :"protocol", #
+        "-i" :"in_interface", #
+        "-o" :"out_interface", #
+
+        "--dst-type" :"dst_type", # nat
+        "--to-destination" :"dst_ip", # nat
+        "--dport" :"dst_port", # nat
+        "--log-prefix" :"log_prefix", # log prefix
+        "--ctstate" :"ctstate", #
+        "-j" :"jump", #
+
+    }
+
+
     def __init__(self,line:str,table:str):
         self.table=table
 
         words=line.split(" ")
-
-        self.conditions:list[Condition]=[]
+        self.line=line
+        self.propsdict:dict[str,Condition]=dict()
         negated=False
         i=0
         while i<len(words):
             word=words[i]
             if word.startswith("-"):
-                
-                if(word=="-A" or word =="-I"):
+
+                if(IpTablesRule.CONDITION_MAP[word] != None):
+                    type_name=IpTablesRule.CONDITION_MAP[word]
                     next_word=words[i+1]
                     i=i+1
-                    self.conditions.append(Condition("step",next_word,negated))
-                elif(word=="-N"):
-                    next_word=words[i+1]
-                    i=i+1
-                    self.conditions.append(Condition("new_chain",next_word,negated))
-                elif(word=="-P"):
-                    next_word=words[i+1]
-                    i=i+1
-                    self.conditions.append(Condition("policy",next_word,negated))
-                elif(word=="-s"):
-                    next_word=words[i+1]
-                    i=i+1
-                    self.conditions.append(Condition("src_ip",next_word,negated))
-                elif(word=="-d"):
-                    next_word=words[i+1]
-                    i=i+1
-                    self.conditions.append(Condition("dst_ip",next_word,negated))
-                elif(word=="-m"):
-                    next_word=words[i+1]
-                    i=i+1
-                    self.conditions.append(Condition("match",next_word,negated))
-                elif(word=="-p"):
-                    next_word=words[i+1]
-                    i=i+1
-                    self.conditions.append(Condition("protocol",next_word,negated))
-                elif(word=="-i"):
-                    next_word=words[i+1]
-                    i=i+1
-                    self.conditions.append(Condition("in_interface",next_word,negated))
-                elif(word=="-o"):
-                    next_word=words[i+1]
-                    i=i+1
-                    self.conditions.append(Condition("out_interface",next_word,negated))
-                elif(word=="--dst-type"):
-                    next_word=words[i+1]
-                    i=i+1
-                    self.conditions.append(Condition("dst-type",next_word,negated))
-                elif(word=="--to-destination"):
-                    next_word=words[i+1]
-                    i=i+1
-                    self.conditions.append(Condition("dst-ip",next_word,negated))
-                elif(word=="--log-prefix"):
-                    next_word=words[i+1]
-                    i=i+1
-                    self.conditions.append(Condition("log-prefix",next_word,negated))
-                elif(word=="--dport"):
-                    next_word=words[i+1]
-                    i=i+1
-                    self.conditions.append(Condition("dst-port",next_word,negated))
-                elif(word=="--ctstate"):
-                    next_word=words[i+1]
-                    i=i+1
-                    self.conditions.append(Condition("ctstate",next_word,negated))
-                elif(word=="-j"):
-                    next_word=words[i+1]
-                    i=i+1
-                    self.conditions.append(Condition("jump",next_word,negated))
+                    self.propsdict[type_name]=Condition(type_name,next_word,negated)
                 else:
                     pass
                 negated=False
@@ -136,16 +117,59 @@ class IpTablesRule:
 
             i+=1
 
+    def delete(self):
+
+        cmd=""
+        for key,val in self.propsdict.items():
+            if key !="chain":
+                inversemapping=INV_COND_MAP[key]
+
+                if inversemapping == None:
+                    raise Exception("failed backwards mapping")
+                cmd+=f"{inversemapping} {val.value} "
+
+        chain=self.propsdict["chain"].value
+        fullcmd=f"iptables -D {chain} -t {self.table} {cmd}"
+        runPr=run(fullcmd,shell=True,capture_output=True)
+        successful=runPr.returncode
+        if successful!=0:
+            error=runPr.stderr
+            raise Exception(error.decode())
+        pass
 
 
 def setupLogging():
-    system("echo \":msg,contains,\"[LOG_INTERCEPT]\" /var/log/iptables.log\" >> " )
-    system("systemctl restart rsyslog" )
-    system("echo 1 > /proc/sys/net/ipv4/ip_forward")
+    run("echo \":msg,contains,\"[LOG_INTERCEPT]\" /var/log/iptables.log\" >> " ,shell=True,capture_output=True)
+    run("systemctl restart rsyslog" ,shell=True,capture_output=True)
+    run("echo 1 > /proc/sys/net/ipv4/ip_forward",shell=True,capture_output=True)
 
-def registerLogging():
-    system("iptables -I INPUT -j LOG --log-prefix 'LOG_INTERCEPT#INPUT'")
+def setup_logging(conditions:list[Condition]):
+    rules=get_rules()
 
+    table_chains:dict[str,set[str]]=dict()
+
+        
+        
+    for rule in rules:
+        if rule.table not in table_chains:
+            table_chains[rule.table]=set()
+        table_chains[rule.table].add(rule.propsdict["chain"].value)
+    condition_str=""
+
+    for conditino in conditions:
+        condition_str+= conditino.to_cmd()+" "
+    for table in tables:
+        for chain in table_chains[table]:
+            cmd=f"iptables -I {chain} -t {table} -j LOG --log-prefix 'LOG_INTERCEPT#{table}{chain}' {condition_str}"
+            pr= run(cmd,shell=True,capture_output=True)
+            output=pr.stdout.decode()
+
+def cleanup_logging():
+    rules=get_rules()
+    for rule in rules:
+        if "log_prefix" in rule.propsdict:
+            if rule.propsdict["log_prefix"].value.startswith("\"LOG_INTERCEPT#"):
+                rule.delete()
 
 
 def get_logs():
@@ -164,7 +188,7 @@ def get_logs():
 
 def get_rules():
 
-    rules=[]
+    rules:list[IpTablesRule]=[]
     for table in tables:
         rule_std=run(f"iptables -S -t {table}",shell=True,capture_output=True)
         for rule in rule_std.stdout.decode().split("\n"):
@@ -173,3 +197,9 @@ def get_rules():
     return rules
 
         
+
+
+INV_COND_MAP=dict()
+
+for key,val in IpTablesRule.CONDITION_MAP.items():
+    INV_COND_MAP[val]=key
