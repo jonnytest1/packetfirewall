@@ -1,7 +1,6 @@
+from queue import Queue
 import select
 import sys
-from time import sleep
-
 
 class _Getch:
     """Gets a single character from standard input.  Does not echo to the
@@ -30,13 +29,22 @@ class _GetchUnix:
 
 getch = _Getch()
 
-def readInput():
-    char=getch()
-    return char
-
 
 def stdin_has_content(timeout: float) -> bool:
     assert timeout >= 0
 
     rlist, _, _ = select.select([sys.stdin], [], [], timeout)
     return bool(rlist)
+
+
+
+
+def input_loop(queue,evt_quque:Queue):
+    while True:
+        char=getch()
+        queue.put(char) 
+
+        if(not evt_quque.empty()):
+            evt=evt_quque.get()
+            if(evt=="QUIT"):
+                return

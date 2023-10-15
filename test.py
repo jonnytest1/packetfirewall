@@ -1,3 +1,4 @@
+import datetime
 from log import LogEntry, get_rules
 
 
@@ -5,6 +6,11 @@ line="Oct 15 00:42:03 PCn kernel: [23713.383104] LOG_INTERCEPT#INPUTIN=br-48bfea
 
 log=LogEntry(line)
 
-rules=get_rules()
+testdate="Oct 15 17:17:18"
+
+time=datetime.datetime.strptime(testdate,"%b %d %H:%M:%S")
+
+
+
 
 assert True

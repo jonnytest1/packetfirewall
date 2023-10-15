@@ -1,22 +1,28 @@
 from os import system
 from subprocess import run
 from re import search
-
+from datetime import datetime
 tables=["filter","nat","mangle","raw","security"]
 
 """Oct 15 00:00:29 PCn kernel: [21219.536922] LOG_INTERCEPT#INPUTIN=lo OUT= MAC=00:00:00:00:00:00:00:00:00:00:00:00:08:00 SRC=127.0.0.1 DST=127.0.0.1 LEN=109 TOS=0x00 PREC=0x00 TTL=64 ID=46133 DF PROTO=TCP SPT=52050 DPT=34249 WINDOW=24571 RES=0x00 ACK PSH URGP=0 """
 class LogEntry:
+    MATCHING_PROPS_FOR_GROUP=["dst_ip","src_ip","destination_port","protocol","interface_in","log_type"]
+
     def __init__(self,line:str):
-        interface_match="IN=(?P<interfacein>[^ ]*?) OUT=(?P<interfaceout>[^ ]*?) (PHYSIN=(?P<interfacephysin>[^ ]*?) )?"
+        interface_match="IN=(?P<interface_in>[^ ]*?) OUT=(?P<interface_out>[^ ]*?) (PHYSIN=(?P<interfacephysin>[^ ]*?) )?"
         ip_match="SRC=(?P<src_ip>[^ ]*?) DST=(?P<dst_ip>[^ ]*?) "
         port_match="SPT=(?P<source_port>[^ ]*?) DPT=(?P<destination_port>[^ ]*?) "
-        match= search(f"LOG_INTERCEPT#(?P<type>[^ ]*?){interface_match}MAC=(?P<mac>[^ ]*?) {ip_match}LEN=(?P<length>[^ ]*?) TOS=.*?ID=(?P<id>[^ ]*?) .*?PROTO=(?P<protocol>[^ ]*?) {port_match}",line)
+        date_match="(?P<timestamp>.*?\\d\\d:\\d\\d:\\d\\d) (?P<pcname>.*?) kernel: \\[(?P<log_id_ct>.*?)\\] "
+        match= search(f"{date_match}LOG_INTERCEPT#(?P<log_type>[^ ]*?){interface_match}MAC=(?P<mac>[^ ]*?) {ip_match}LEN=(?P<length>[^ ]*?) TOS=.*?ID=(?P<id>[^ ]*?) .*?PROTO=(?P<protocol>[^ ]*?) {port_match}",line)
         if match == None:
             return
         
-        self.log_type=match.group("type")
-        self.interface_in=match.group("interfacein")
-        self.interface_out=match.group("interfaceout")
+        self.timestamp=match.group("timestamp")
+        self.datetime=datetime.strptime(str(datetime.now().year)+" "+self.timestamp,"%Y %b %d %H:%M:%S")
+        self.datetime.year
+        self.log_type=match.group("log_type")
+        self.interface_in=match.group("interface_in")
+        self.interface_out=match.group("interface_out")
         self.interface_in_phys=match.group("interfacephysin")
         self.mac_address=match.group("mac")
         self.protocol=match.group("protocol")
@@ -25,9 +31,16 @@ class LogEntry:
         self.source_port=match.group("source_port")
         self.destination_port=match.group("destination_port")
         self.id=match.group("id")
+
+
+        self.prop_dict=match.groupdict()
     
     def grouped(self,other:"LogEntry"):
-        return other.dst_ip==self.dst_ip and other.destination_port==self.destination_port and other.protocol == self.protocol and other.interface_in == self.interface_in and other.log_type==self.log_type and other.src_ip==self.src_ip
+        for prop in LogEntry.MATCHING_PROPS_FOR_GROUP:
+            if other.prop_dict[prop] != self.prop_dict[prop]:
+                return False
+
+        return True
 
 
 class Condition:

@@ -1,189 +1,149 @@
 
+from threading import Thread
 from time import sleep
 from termcolor import colored
 from os import system
-from input import  readInput, stdin_has_content
+from input.input import  input_loop, stdin_has_content
+from input.input_types import INPUT_TYPES
 from log import LogEntry, get_logs
-
-def null():
-    pass
-
-
-class Element:
-    
-    def __init__(self,text:str,cb=null):
-        self.text = text
-        self.cb = cb
-
-    def draw(self):
-        return self.text
-
-
-
-
-class Row:
-
-    def __init__(self,options:list[Element]):
-        self.options=options
-
-
-
-
-class Table:
-
-    def __init__(self,options:list[Row]):
-        self.selected_x = 0
-        self.selected_y = 0
-        self.options=options
-
-
-    def draw(self):
-        buf=""
-        for i in range(len(self.options)):
-            row=self.options[i]
-            for j in range(len(row.options)):
-                if i==self.selected_y and j==self.selected_x:
-                    buf+=colored(row.options[j].draw(),"black","on_light_grey")
-                else:
-                    buf+=colored(row.options[j].draw(),"white")
-                buf+=" "
-            buf+="\r\n"
-        return buf
-
-    def right(self):
-        self.selected_x+=1
-        self.selected_x = min(len(self.options[self.selected_y ].options)-1,self.selected_x)
-    def left(self):
-        self.selected_x-=1
-        self.selected_x = max(0,self.selected_x)
-
-    def down(self):
-        self.selected_y+=1
-        self.selected_y = min(len(self.options)-1,self.selected_y)
-    def up(self):
-        self.selected_y-=1
-        self.selected_y = max(0,self.selected_y)
-    def next(self):
-        self.selected_x+=1
-        if(self.selected_x > len(self.options[self.selected_y ].options)-1):
-            self.selected_x =0
-            self.selected_y+=1
-        if(self.selected_y> len(self.options)-1):
-            self.selected_y =0
-
-    def enter(self):
-        el=self.options[self.selected_y].options[self.selected_x]
-        if el != None:
-            el.cb()
-
-def test():
-    r.options.append(Row([Element(str(len(r.options)+1)+"  "),Element("abc")]))
+from log_reader import log_loop
+from ui.form import UIForm
+from ui.ui import UI
+from ui.ui_text_input import UITextInput
+from ui.ui_textbutton_element import UITextButton
+from queue import Empty, Queue 
+import sys
+def setup_log_filter():
+    ui.columns.append([UITextButton(str(len(ui.columns)+1)+"  "),UITextButton("abc")])
 
 def logs():
     lgs=get_logs()
     print(lgs)
 
 
-r=Table([
-    Row([Element("setup log filter",test),Element("log",logs),Element("abc"),Element("abc"),Element("abc"),Element("abc")]),
-    Row([Element("2  "),Element("abc"),Element("abc"),Element("abc"),Element("abc"),Element("abc")]),
-    Row([Element("3  "),Element("abc"),Element("abc"),Element("abc"),Element("abc"),Element("abc")])
-])
+ui=UI()
 
 
-UP_ARROW="\x1b[A"
-DOWN_ARROW="\x1b[B"
-RIGHT_ARROW="\x1b[C"
-LEFT_ARROW="\x1b[D"
-CONTROL_CHARACTER="\x1b"
+def onfilter_form(dict):
+
+    pass
+
+def remove_filters():
+    pass
+
+form=UIForm(fields=["source interface","source ip","destination ip","destination port"]
+            ,confirmationname="setup log filter",oncomplete=onfilter_form)
+
+
+def main_escape():
+    stop_flag_input.put("QUIT")
+    stop_flag_log.put("QUIT")
+    remove_filters()
+    print("one more input to reactivate input thread 😅")
+    log_thread.join()
+    input_thread.join()
+    return True
+
+escape_fnc=main_escape
+
+def to_form():
+    global escape_fnc
+    ui.set_columns([])
+    form.add_to(ui)
+    ui.columns.append([UITextButton("graph",to_graph)])
+    escape_fnc=main_escape
+
+def to_graph():
+    global escape_fnc
+    ui.set_columns([[UITextButton("back",to_form),UITextButton(""" src: https://serverfault.com/questions/1008556/is-there-a-need-for-the-nat-table-input-chain
+*external packet* 
+      ↓
+ raw-PREROUTING                                                                *local packet*
+      ↓                                                                             ↓
+mangle-PREROUTNG                                                                raw-OUTPUT
+      ↓                                                                             ↓
+src_ip 127.0.0.1? No→ nat-PREROUTING                                           mangle-OUTPUT
+   Yes|                    ↓                                                        ↓
+      |               dst_ip 127.0.0.1? No→ mangle-FORWARD                      nat-OUTPUT 
+      |                 Yes↓                     ↓                                  ↓
+      --------------→ mangle-INPUT          filter-FORWARD                    filter-OUTPUT
+                           ↓                     ↓                                  ↓
+                      filter-INPUT         security-FORWARD                  security-OUTPUT
+                           ↓                     |                                  |
+                     security-INPUT              ----→ [Release to interface_out]←---
+                           ↓                                       ↓
+                        nat-INPUT                           dst_ip 127.0.0.1? No-----|
+                           ↓                                       |                 ↓  
+                      *LOCAL(apps)*                                |            nat-POSTROUTING
+                                                                   |                 |
+                                                                   |------------------
+                                                                   ↓
+                                                                 *OUT*
+""",to_form)]])
+    escape_fnc=to_form
+
+to_form()
 
 inputbf=""
 
-system("clear")
+stop_flag_log=Queue()
+stop_flag_input=Queue()
 
-logids=set()
+log_thread=Thread(target=log_loop,args=(ui,stop_flag_log))
+log_thread.start()
 
-
-
-class LogRow:
-    def __init__(self,logRef:LogEntry):
-        
-        self.row=Row([Element("dst:"+log.dst_ip),Element("dstp:"+log.destination_port),Element("id:"+log.id),Element("srcip:"+log.src_ip),Element("type:"+log.log_type)])
-        self.log=logRef
-        self.group_ct_el:Element|None=None
-        self.group_ct=0
-
-
-    def add_group(self):
-        if self.group_ct_el== None:
-            self.group_ct_el=Element("")
-            self.row.options.append(self.group_ct_el)
-        self.group_ct+=1
-
-        self.group_ct_el.text="grp:"+str(self.group_ct)
-
-
-  
-loglist:list[LogRow]=[]      
+input_Events=Queue()
+input_thread=Thread(target=input_loop,args=(input_Events,stop_flag_input))
+input_thread.start()
 
 while True:
-    t=r.draw()
-    print(t+"\n\n\n\r")
+    ui.redraw()
 
-    hasINput=stdin_has_content(0.2)
-    if(hasINput):
-        c=readInput()
-        inputbf+=c
-        if(CONTROL_CHARACTER==inputbf):
-            inputbf+=readInput()
-            inputbf+=readInput()
+    #hasINput=stdin_has_content(1)
+    #if(hasINput):
+    c=input_Events.get()
+    inputbf+=c
+    if(INPUT_TYPES.CONTROL_CHARACTER==inputbf):
+        try:
+            inputbf+=input_Events.get(timeout=0.1)
+            inputbf+=input_Events.get()
+        except Empty as e:
+            inputbf=INPUT_TYPES.ESCAPE_MAPPED
 
-        if(inputbf==RIGHT_ARROW):
-            r.right()
-            inputbf=""
-        elif inputbf==LEFT_ARROW:
-            r.left()
-            inputbf=""
-        elif inputbf==DOWN_ARROW:
-            r.down()
-            inputbf=""
-        elif inputbf==UP_ARROW:
-            r.up()
-            inputbf=""
-        elif(inputbf=="\t"):
-            r.next()
-            inputbf=""
-        elif(inputbf=="\r" or inputbf==" "):
-            r.enter()
-            inputbf=""
-        else:
-            pass
-
-    duplicatect=0
-    newlogs=get_logs()
-    for log in newlogs:
-        if log.id not in logids:
-            logids.add(log.id)
-
-            matched=False
-            for logref in loglist:
-                if(logref.log.grouped(log)):
-                    logref.add_group()
-                    matched=True
-                    break
-            
-            if not matched:
-                if (log.interface_in == "eth0" or log.interface_in_phys=="eth0") and log.protocol=="TCP" and log.destination_port=="9000":
-                    rowRef = LogRow(log)
-                    loglist.append(rowRef)
-                    r.options.append(rowRef.row)
-                
-        else:
-            duplicatect+=1
+    if(ui.focused):
+        should_unfocus=ui.focused.event(inputbf)
         
-        
+        inputbf=""
+        if(should_unfocus):
+            ui.focused.blur()
+            ui.focused=None
 
-    print(duplicatect)
-    system("clear")
+        continue
+    
+
+    if(inputbf==INPUT_TYPES.RIGHT_ARROW):
+        ui.right()
+        inputbf=""
+    elif inputbf==INPUT_TYPES.LEFT_ARROW:
+        ui.left()
+        inputbf=""
+    elif inputbf==INPUT_TYPES.DOWN_ARROW:
+        ui.down()
+        inputbf=""
+    elif inputbf==INPUT_TYPES.UP_ARROW:
+        ui.up()
+        inputbf=""
+    elif(inputbf=="\t"):
+        ui.next()
+        inputbf=""
+    elif(inputbf=="\r" or inputbf==" "):
+        ui.enter()
+        inputbf=""
+    elif(inputbf==INPUT_TYPES.ESCAPE_MAPPED):
+        if escape_fnc()== True:
+            break
+        inputbf=""
+    else:
+        pass
 
 

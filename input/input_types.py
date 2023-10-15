@@ -1,0 +1,10 @@
+
+class INPUT_TYPES:
+    BACK_SPACE="\x7f" 
+    CONTROL_CHARACTER="\x1b"
+    ESCAPE_CHARACTER="\x1b"
+    ESCAPE_MAPPED="ESCAPE"
+    UP_ARROW="\x1b[A"
+    DOWN_ARROW="\x1b[B"
+    RIGHT_ARROW="\x1b[C"
+    LEFT_ARROW="\x1b[D"
