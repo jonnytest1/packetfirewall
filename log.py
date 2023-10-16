@@ -7,7 +7,7 @@ from datetime import datetime
 tables=["filter","nat","mangle","raw","security"]
 
 class LogEntry:
-    MATCHING_PROPS_FOR_GROUP=["dst_ip","src_ip","destination_port","protocol","interface_in","log_type"]
+    MATCHING_PROPS_FOR_GROUP=["dst_ip","src_ip","destination_port","protocol","interface_in"] #,"log_type"
 
     def __init__(self,line:str):
         interface_match="IN=(?P<interface_in>[^ ]*?) OUT=(?P<interface_out>[^ ]*?) (PHYSIN=(?P<interfacephysin>[^ ]*?) )?"
@@ -15,7 +15,7 @@ class LogEntry:
         port_match="SPT=(?P<source_port>[^ ]*?) DPT=(?P<destination_port>[^ ]*?) "
         date_match="(?P<timestamp>.*?\\d\\d:\\d\\d:\\d\\d) (?P<pcname>.*?) kernel: \\[(?P<log_id_ct>.*?)\\] "
 
-        match= search(f"{date_match}LOG_INTERCEPT#(?P<log_type>[^ ]*?){interface_match}MAC=(?P<mac>[^ ]*?) {ip_match}LEN=(?P<length>[^ ]*?) TOS=.*?ID=(?P<id>[^ ]*?) .*?PROTO=(?P<protocol>[^ ]*?) {port_match}",line)
+        match= search(f"{date_match}(?P<log_type>LOG_INTERCEPT#[^ ]*?){interface_match}MAC=(?P<mac>[^ ]*?) {ip_match}LEN=(?P<length>[^ ]*?) TOS=.*?ID=(?P<id>[^ ]*?) .*?PROTO=(?P<protocol>[^ ]*?) {port_match}",line)
         if match == None:
             return
         
@@ -46,6 +46,9 @@ class LogEntry:
 
 
 class Condition:
+    DESTINATION_PORT="dst_port"
+
+
     def __init__(self,type:str,value:str,negated:bool):
         self.type=type
         self.value=value

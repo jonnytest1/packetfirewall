@@ -11,10 +11,20 @@ logids=set()
   
 
 class LogRow:
+    FIRST_DETAIL_INSET="     "
+
     def __init__(self,log:LogEntry):
         
         self.row:list[UITextElement] =[]
         self.row.append(UITextButton(f"id:{log.prop_dict['id']}"))
+        self.log_id=log.id
+        self.log_type=log.log_type
+        self.log_time=log.datetime.timestamp()
+
+
+        self.detail_row:list[UITextElement]=[]
+        self.detail_row.append(UITextButton(LogRow.FIRST_DETAIL_INSET+self.log_type.replace("LOG_INTERCEPT#","")))
+
         for field in LogEntry.MATCHING_PROPS_FOR_GROUP:
             self.row.append(UITextButton(f"{field}:{log.prop_dict[field]}"))
         
@@ -44,7 +54,21 @@ class LogRow:
         if self.steps_el == None:
             self.steps_el=UITextButton("")
             self.row.append(self.steps_el)
+            
         
+        if other.datetime.timestamp()>(self.log_time+(5)):
+            self.log_id=other.id
+            self.log_type=other.log_type
+            self.log_time=other.datetime.timestamp()
+            self.detail_row.clear()
+            self.detail_row.append(UITextButton(LogRow.FIRST_DETAIL_INSET+other.log_type.replace("LOG_INTERCEPT#","")))
+
+
+
+        if(other.id==self.log_id):
+            if(other.log_type != self.log_type):
+                self.detail_row.append(UITextButton(other.log_type.replace("LOG_INTERCEPT#","")))
+
         pass
 
 
@@ -60,24 +84,30 @@ def log_loop(ui:UI,evt_quque:Queue):
 
         newlogs=get_logs()
         for log in newlogs:
-            if log.datetime<starttime:
-                continue
-            if (log.interface_in == "eth0" or log.interface_in_phys=="eth0") and log.protocol=="TCP" and log.destination_port=="9000":
-                setid=log.id+log.log_type
-                if setid not in logids:
-                    logids.add(setid)
+            
+            try:
+                if log.datetime<starttime:
+                    continue
+                if log.log_type.startswith("LOG_INTERCEPT"):
+                    setid=log.id+log.log_type
+                    if setid not in logids:
+                        logids.add(setid)
 
-                    matched=False
-                    for logref in loglist:
-                        if(logref.log.grouped(log)):
-                            logref.add_group(log)
+                        matched=False
+                        for logref in loglist:
+                            if(logref.log.grouped(log)):
+                                logref.add_group(log)
+                                ui.redraw()
+                                matched=True
+                                break
+                        
+                        if not matched:
+                            row_ref = LogRow(log)
+                            loglist.append(row_ref)
+                            ui.columns.append(row_ref.row)
+                            ui.columns.append(row_ref.detail_row)
                             ui.redraw()
-                            matched=True
-                            break
-                    
-                    if not matched:
-                        row_ref = LogRow(log)
-                        loglist.append(row_ref)
-                        ui.columns.append(row_ref.row)
-                        ui.redraw()
+            except Exception as e:
+                pass
+
                     

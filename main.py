@@ -14,8 +14,7 @@ from ui.ui_text_input import UITextInput
 from ui.ui_textbutton_element import UITextButton
 from queue import Empty, Queue 
 import sys
-def setup_log_filter():
-    ui.columns.append([UITextButton(str(len(ui.columns)+1)+"  "),UITextButton("abc")])
+
 
 def logs():
     lgs=get_logs()
@@ -25,10 +24,16 @@ def logs():
 ui=UI()
 
 
+DESTINATION_PORT_FORM="destination port"
+DESTINATION_IP_FORM="destination ip"
+SRC_IP_FORM="source ip"
+SRC_IF_FORM="source interface"
+
 def onfilter_form(dict):
+    cleanup_logging()
     conditions=[Condition("protocol","tcp",False)]
-    if dict["destination port"]!=None:
-        conditions.append(Condition("dst_port",dict["destination port"],False))
+    if dict[DESTINATION_PORT_FORM]!=None:
+        conditions.append(Condition(Condition.DESTINATION_PORT,dict[DESTINATION_PORT_FORM],False))
     
     setup_logging(conditions)
 
@@ -37,7 +42,7 @@ def remove_filters():
     cleanup_logging()
     print("done\r")
 
-form=UIForm(fields=["source interface","source ip","destination ip","destination port"]
+form=UIForm(fields=[SRC_IF_FORM,SRC_IP_FORM,DESTINATION_IP_FORM,DESTINATION_PORT_FORM]
             ,confirmationname="setup log filter",oncomplete=onfilter_form)
 
 
