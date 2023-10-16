@@ -23,7 +23,7 @@ class UIForm():
             ui.columns.append([UITextButton(f"{field}:"),fieldinput])
 
         
-        def completion():
+        def completion(txt):
             result:FormResponse=dict()
             
             for field in self.fields:
@@ -33,4 +33,4 @@ class UIForm():
                 self.complete(result)
             
 
-        ui.columns.append([UITextButton( self.confirmationname,completion)])
+        ui.columns.append([UITextButton(self.confirmationname,completion)])

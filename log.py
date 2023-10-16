@@ -120,7 +120,7 @@ class IpTablesRule:
 
             i+=1
 
-    def delete(self):
+    def delete(self,_):
 
         cmd=""
         for key,val in self.propsdict.items():
@@ -170,7 +170,7 @@ def cleanup_logging():
     for rule in rules:
         if "log_prefix" in rule.propsdict:
             if rule.propsdict["log_prefix"].value.startswith("\"LOG_INTERCEPT#"):
-                rule.delete()
+                rule.delete(None)
 
 
 def get_logs():

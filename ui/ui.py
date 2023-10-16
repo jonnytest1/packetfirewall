@@ -1,20 +1,24 @@
 from math import ceil
 from os import system
+from typing import Callable
 from termcolor import COLORS, colored,RESET
 
 from ui.baseelement import UITextElement
 from ui.ui_text_input import UITextInput
 from ui.ui_textbutton_element import UITextButton
 
+ESCAPE_FNC=Callable[[],bool|None]
 
 class UI:
     DEFAULT_BACKGROUND="on_black"
 
     def __init__(self):
         self.columns:list[list[UITextElement]]=[]
+        self.history=[]
         self.selected_x = 0
         self.selected_y = 0
         self.focused=None
+        self.escape_fnc:ESCAPE_FNC
 
     def terminal_representation(self):
         buf=""
@@ -30,9 +34,18 @@ class UI:
         return buf
 
     def set_columns(self,cols:list[list[UITextElement]]):
+        if len(self.columns):
+            self.history.append(self.columns)
         self.columns=cols
         self.selected_x=0
         self.selected_y=0
+
+    def back(self):
+        self.selected_x=0
+        self.selected_y=0
+        if len(self.history) ==0:
+            return False
+        self.columns=self.history.pop()
 
     def redraw(self):
         system("clear")
@@ -102,7 +115,10 @@ class UI:
         el=self.get_selected()
         if el != None :
             if isinstance(el,UITextButton):
-                el.call()
+                if el.text=="back" and el.cb == None:
+                    self.back()
+                else:
+                    el.call()
             elif isinstance(el,UITextInput):
                 self.focused=el
                 el.focus()
