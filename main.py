@@ -6,7 +6,7 @@ from forms.main_form import DESTINATION_PORT_FORM, main_form
 from forms.rules import display_rules
 from input.input import  input_loop, stdin_has_content
 from input.input_types import INPUT_TYPES
-from log import Condition, LogEntry, cleanup_logging, get_logs, get_rules, setup_logging
+from log import Log_Rule_Condition, LogEntry, cleanup_logging, get_logs, get_rules, setup_logging
 from log_reader import log_loop
 from ui.baseelement import UITextElement
 from ui.form import UIForm
@@ -33,7 +33,7 @@ def main_escape():
 ui.escape_fnc=main_escape
 
   
-main_form()
+main_instance=main_form()
 
 inputbf=""
 
@@ -41,7 +41,7 @@ stop_flag_log=Queue()
 stop_flag_input=Queue()
 
 
-log_form=LogForm(ui)
+log_form=LogForm(main_instance)
 
 log_thread=Thread(target=log_loop,args=(log_form,stop_flag_log))
 log_thread.start()

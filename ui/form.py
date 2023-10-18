@@ -2,6 +2,7 @@ from typing import Callable
 from ui.ui import UI
 from ui.ui_text_input import UITextInput
 from ui.ui_textbutton_element import UITextButton
+from ui.ui_view import ui_view
 
 FormResponse=dict[str,str|None]
 
@@ -16,7 +17,7 @@ class UIForm():
         self.uidict:dict[str,UITextInput]=dict()
 
     
-    def add_to(self,ui:UI):
+    def add_to(self,ui:ui_view):
         for field in self.fields:
             fieldinput=UITextInput(field)
             self.uidict[field]=fieldinput

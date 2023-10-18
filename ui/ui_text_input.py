@@ -16,12 +16,16 @@ class UITextInput(UITextElement):
         self.text_before_focus=""
         self.selection=0
         self.focused=False
+        self.use_placeholder=False
 
     def focus(self):
         self.focused=True
         self.text_before_focus=self.text
         if self.text == None:
-            self.text=""
+            if(self.use_placeholder):
+                self.text=self.placeholder
+            else:
+                self.text=""
             self.selection=0
     def blur(self):
         self.focused=False
@@ -47,6 +51,7 @@ class UITextInput(UITextElement):
             return
         elif(evt==INPUT_TYPES.RIGHT_ARROW):
             self.selection+=1
+            self.selection=min(self.selection,len(self.text))
             return
         elif(evt.startswith(INPUT_TYPES.CONTROL_CHARACTER)):
             return
@@ -60,7 +65,6 @@ class UITextInput(UITextElement):
         
         if len(self.text)==0 or not self.focused:
             return colored(self.text,attrs=["bold"])
-
         [front,selection,back]=[self.text[0:self.selection-1],self.text[self.selection-1],self.text[self.selection:]]
 
         front_fmt=colored(front,UITextInput.FOREGROUND_COLOR,attrs=["bold"])

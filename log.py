@@ -15,7 +15,7 @@ class LogEntry:
         port_match="SPT=(?P<source_port>[^ ]*?) DPT=(?P<destination_port>[^ ]*?) "
         date_match="(?P<timestamp>.*?\\d\\d:\\d\\d:\\d\\d) (?P<pcname>.*?) kernel: \\[(?P<log_id_ct>.*?)\\] "
 
-        match= search(f"{date_match}(?P<log_type>LOG_INTERCEPT#[^ ]*?){interface_match}MAC=(?P<mac>[^ ]*?) {ip_match}LEN=(?P<length>[^ ]*?) TOS=.*?ID=(?P<id>[^ ]*?) .*?PROTO=(?P<protocol>[^ ]*?) {port_match}",line)
+        match= search(f"{date_match}(?P<log_type>LOG_INTERCEPT#[^ ]*?){interface_match}(MAC=(?P<mac>[^ ]*?) )?{ip_match}LEN=(?P<length>[^ ]*?) TOS=.*?ID=(?P<id>[^ ]*?) .*?PROTO=(?P<protocol>[^ ]*?) {port_match}",line)
         if match == None:
             return
         
@@ -45,7 +45,7 @@ class LogEntry:
         return True
 
 
-class Condition:
+class Log_Rule_Condition:
     DESTINATION_PORT="dst_port"
 
 
@@ -65,6 +65,37 @@ class Condition:
         return f"{negation}{inversemapping} {self.value}"
 
 
+def ip_tables_rule_from_string(line:str,table:str):
+    rule=IpTablesRule(table)
+    words=line.split(" ")
+    rule.line=line
+    negated=False
+    i=0
+    while i<len(words):
+        word=words[i]
+        if word.startswith("-"):
+
+            if(IpTablesRule.CONDITION_MAP[word] != None):
+                type_name=IpTablesRule.CONDITION_MAP[word]
+                next_word=words[i+1]
+                i=i+1
+                rule.propsdict[type_name]=Log_Rule_Condition(type_name,next_word,negated)
+            else:
+                pass
+            negated=False
+        elif(word=="ACCEPT"):
+            rule.mode="ACCEPT"
+        elif(word=="DROP"):
+            rule.mode="DROP"
+        elif(word=="!"):
+            negated=True
+        else:
+            pass
+
+        i+=1
+
+    return rule
+
 class IpTablesRule:
 
     CONDITION_MAP={
@@ -80,7 +111,7 @@ class IpTablesRule:
         "-o" :"out_interface", #
 
         "--dst-type" :"dst_type", # nat
-        "--to-destination" :"dst_ip", # nat
+        "--to-destination" :"nat_dst_ip", # nat
         "--dport" :"dst_port", # nat
         "--log-prefix" :"log_prefix", # log prefix
         "--ctstate" :"ctstate", #
@@ -89,36 +120,31 @@ class IpTablesRule:
     }
 
 
-    def __init__(self,line:str,table:str):
+    def __init__(self,table:str):
         self.table=table
+        self.propsdict:dict[str,Log_Rule_Condition]=dict()
+        self.line:str
+        self.mode:str
+        
+    def create_cmd(self):
+        conditions =""
 
-        words=line.split(" ")
-        self.line=line
-        self.propsdict:dict[str,Condition]=dict()
-        negated=False
-        i=0
-        while i<len(words):
-            word=words[i]
-            if word.startswith("-"):
+        if "protocol" in self.propsdict:
+            cmd=self.propsdict["protocol"].to_cmd()
+            # do protocol first since it needs to be before others
+            conditions+=f"{cmd} "
 
-                if(IpTablesRule.CONDITION_MAP[word] != None):
-                    type_name=IpTablesRule.CONDITION_MAP[word]
-                    next_word=words[i+1]
-                    i=i+1
-                    self.propsdict[type_name]=Condition(type_name,next_word,negated)
-                else:
-                    pass
-                negated=False
-            elif(word=="ACCEPT"):
-                self.mode="ACCEPT"
-            elif(word=="DROP"):
-                self.mode="DROP"
-            elif(word=="!"):
-                negated=True
-            else:
-                pass
+        for key,val in self.propsdict.items():
+            if key !="chain" and key!="protocol":
+                inversemapping=INV_COND_MAP[key]
 
-            i+=1
+                if inversemapping == None:
+                    raise Exception("failed backwards mapping")
+                conditions+=f"{inversemapping} {val.value} "
+
+        chain=self.propsdict["chain"].value
+        fullcmd=f"iptables -t {self.table} -A {chain} {conditions} "
+        return fullcmd
 
     def delete(self,_):
 
@@ -146,7 +172,7 @@ class IpTablesRule:
     #run("systemctl restart rsyslog" ,shell=True,capture_output=True)
     #run("echo 1 > /proc/sys/net/ipv4/ip_forward",shell=True,capture_output=True)
 
-def setup_logging(conditions:list[Condition]):
+def setup_logging(conditions:list[Log_Rule_Condition]):
     rules=get_rules()
 
     table_chains:dict[str,set[str]]=dict()
@@ -182,7 +208,7 @@ def get_logs():
         return ar
 
     for line in output.split("\n"):
-        if(len(line)):
+        if(len(line)) and "LOG_INTERCEPT" in line:
             ar.append(LogEntry(line))
     return ar
 
@@ -194,10 +220,14 @@ def get_rules():
         rule_std=run(f"iptables -S -t {table}",shell=True,capture_output=True)
         for rule in rule_std.stdout.decode().split("\n"):
             if(len(rule)):
-                rules.append(IpTablesRule(rule,table))
+                rules.append(ip_tables_rule_from_string(rule,table))
     return rules
 
         
+def add_rule(params:IpTablesRule):
+    create_cmd=params.create_cmd()
+    create_output=run(create_cmd,shell=True,capture_output=True)
+    create_output.check_returncode()
 
 
 INV_COND_MAP=dict()

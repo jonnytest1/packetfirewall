@@ -1,11 +1,15 @@
 from ui.ui_textbutton_element import UITextButton
 
 from forms.ui_ref import ui_element
+from ui.ui_view import ui_view
 
-def to_graph(_):
-    def back(_):
+
+graph_view=ui_view()
+
+def back(_):
         ui_element.back()
-    ui_element.set_columns([[UITextButton("back"),UITextButton(""" src: https://serverfault.com/questions/1008556/is-there-a-need-for-the-nat-table-input-chain
+
+graph_view.columns.append([UITextButton("back"),UITextButton(""" src: https://serverfault.com/questions/1008556/is-there-a-need-for-the-nat-table-input-chain
 *external packet* 
       ↓
  raw-PREROUTING                                                                *local packet*
@@ -29,5 +33,8 @@ src_ip 127.0.0.1? No→ nat-PREROUTING                                          
                                                                    |------------------|
                                                                    ↓
                                                                  *OUT*
-""",back)]])
-    ui_element.escape_fnc=ui_element.back
+""",back)])
+
+def to_graph(_):
+    
+    ui_element.set_view(graph_view)
