@@ -1,9 +1,13 @@
-from log import Log_Rule_Condition, IpTablesRule, LogEntry, add_rule
+from api.model.log_entry import LogEntry
+from api.model.rule import IpTablesRule
+from api.model.rule_condition import Log_Rule_Condition
+
 from forms.ui_ref import ui_element
 from ui.ui import UI
 from ui.ui_text_input import UITextInput
 from ui.ui_textbutton_element import UITextButton
 from ui.ui_view import ui_view
+from tables_api import tables_api
 
 
 
@@ -63,7 +67,7 @@ class AddForm:
 
             if self.mode_selected=="DNAT":
                 
-                add_rule(rule)
+                tables_api.add_rule(rule)
             self.ui.back()
 
     def add_to(self,ui:UI):

@@ -1,10 +1,10 @@
 from datetime import datetime
 from queue import Queue
 from forms.log_form import LogForm
-from log import LogEntry, get_logs
 from ui.baseelement import UITextElement
 from ui.ui import UI
 from ui.ui_textbutton_element import UITextButton
+from tables_api import tables_api
 
 logids=set()
   
@@ -16,7 +16,7 @@ def log_loop(log_form:LogForm,evt_quque:Queue):
             if(evt=="QUIT"):
                 return
 
-        newlogs=get_logs()
+        newlogs=tables_api.get_logs()
         for log in newlogs:
             try:
                 if log.datetime<starttime:

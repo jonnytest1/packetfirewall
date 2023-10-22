@@ -1,11 +1,11 @@
+from api.model.rule_condition import Log_Rule_Condition
 from forms.graph import to_graph
 from forms.rules import display_rules
-from log import Log_Rule_Condition, cleanup_logging, setup_logging
 from ui.form import UIForm
 from forms.ui_ref import ui_element
 from ui.ui_textbutton_element import UITextButton
 from ui.ui_view import ui_view
-
+from tables_api import tables_api
 
 DESTINATION_PORT_FORM="destination port"
 DESTINATION_IP_FORM="destination ip"
@@ -19,7 +19,7 @@ def onfilter_form(dict):
     if dict[DESTINATION_PORT_FORM]!=None:
         conditions.append(Log_Rule_Condition(Log_Rule_Condition.DESTINATION_PORT,dict[DESTINATION_PORT_FORM],False))
     
-    setup_logging(conditions)
+    tables_api.setup_logging(conditions)
     
 
 class main_view(ui_view):

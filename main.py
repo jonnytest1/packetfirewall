@@ -1,24 +1,21 @@
 
 from threading import Thread
-from forms.graph import to_graph
+from api.iptables import ip_tables
 from forms.log_form import LogForm
 from forms.main_form import DESTINATION_PORT_FORM, main_form
-from forms.rules import display_rules
-from input.input import  input_loop, stdin_has_content
+from input.input import  input_loop
 from input.input_types import INPUT_TYPES
-from log import Log_Rule_Condition, LogEntry, cleanup_logging, get_logs, get_rules, setup_logging
 from log_reader import log_loop
-from ui.baseelement import UITextElement
-from ui.form import UIForm
-from ui.ui_textbutton_element import UITextButton
 from forms.ui_ref import ui_element
 from queue import Empty, Queue 
+from tables_api import tables_api
+
 
 ui=ui_element
 
 def remove_filters():
     print("cleaning up log filters...\r")
-    cleanup_logging()
+    tables_api.cleanup_logging()
     print("done\r")
 
 def main_escape():

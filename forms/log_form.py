@@ -1,5 +1,6 @@
+from api.model.log_entry import LogEntry
 from forms.log_row import LogRow
-from log import LogEntry
+
 from ui.ui import UI
 from ui.ui_view import ui_view
 
