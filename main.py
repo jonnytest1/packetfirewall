@@ -8,6 +8,13 @@ from log_reader import log_loop
 from forms.ui_ref import ui_element
 from queue import Empty, Queue 
 from tables_api import tables_api
+import debugpy
+
+try:
+    debugpy.listen(("0.0.0.0", 5678))
+    print("Waiting for debugger attach")
+except:
+    pass
 
 
 ui=ui_element
