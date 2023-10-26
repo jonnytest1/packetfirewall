@@ -9,7 +9,7 @@ class LogEntry:
         interface_match="IN=(?P<interface_in>[^ ]*?) OUT=(?P<interface_out>[^ ]*?) (PHYSIN=(?P<interfacephysin>[^ ]*?) )?"
         ip_match="SRC=(?P<src_ip>[^ ]*?) DST=(?P<dst_ip>[^ ]*?) "
         port_match="SPT=(?P<source_port>[^ ]*?) DPT=(?P<destination_port>[^ ]*?) "
-        date_match="(?P<timestamp>.*?\\d\\d:\\d\\d:\\d\\d) (?P<pcname>.*?) kernel: \\[(?P<log_id_ct>.*?)\\] "
+        date_match="(?P<timestamp>.*?\\d\\d:\\d\\d:\\d\\d) (?P<pcname>.*?) kernel: (\\[(?P<log_id_ct>.*?)\\] )?"
 
         match= search(f"{date_match}(?P<log_type>LOG_INTERCEPT#[^ ]*?){interface_match}(MAC=(?P<mac>[^ ]*?) )?{ip_match}LEN=(?P<length>[^ ]*?) TOS=.*?ID=(?P<id>[^ ]*?) .*?PROTO=(?P<protocol>[^ ]*?) {port_match}",line)
         if match == None:
