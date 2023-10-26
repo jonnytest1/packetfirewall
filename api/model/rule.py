@@ -1,4 +1,3 @@
-from api.iptables import INV_COND_MAP
 from api.model.rule_condition import Log_Rule_Condition
 
 

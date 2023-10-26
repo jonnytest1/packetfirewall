@@ -1,5 +1,5 @@
+from api.model.log_entry import LogEntry
 from forms.add_rule_form import add_rule_form
-from log import LogEntry
 from ui.baseelement import UITextElement
 from ui.ui_textbutton_element import UITextButton
 
