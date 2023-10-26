@@ -1,9 +1,6 @@
 from datetime import datetime
 from queue import Queue
 from forms.log_form import LogForm
-from ui.baseelement import UITextElement
-from ui.ui import UI
-from ui.ui_textbutton_element import UITextButton
 from tables_api import tables_api
 
 logids=set()

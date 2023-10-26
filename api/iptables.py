@@ -151,7 +151,11 @@ class ip_tables:
         create_output.check_returncode()
 
     def get_logs(self):
-        pr= run("tail -n 1000 /var/log/kern.log",shell=True,capture_output=True)
+        try:
+            pr= run("tail -n 1000 /var/log/kern.log",shell=True,capture_output=True)
+        except:
+            #todo finetune for journalctl
+            pr=run("journalctl --file /var/log/journal/4df01c8b5bdb40fe87a4b8e28978a322/system.journal -n 1000 |grep LOG_INTER",shell=True,capture_output=True)
         output=pr.stdout.decode()
         ar:list[LogEntry]=[]
 
