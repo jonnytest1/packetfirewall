@@ -1,2 +1,4 @@
 /.vscode
 __pycache__
+packetfirewall.egg-info
+dist

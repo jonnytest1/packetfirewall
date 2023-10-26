@@ -1,8 +1,7 @@
 
 from threading import Thread
-from api.iptables import ip_tables
 from forms.log_form import LogForm
-from forms.main_form import DESTINATION_PORT_FORM, main_form
+from forms.main_form import main_form
 from input.input import  input_loop
 from input.input_types import INPUT_TYPES
 from log_reader import log_loop
